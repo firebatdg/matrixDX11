@@ -129,50 +129,35 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 
-
 	    /* -----------------------------------
 		 * Heights Buffer 
 		 * -----------------------------------*/
 
 		int IMG_SIZE = 640;
-		float *data = new float[IMG_SIZE];
-		for(int i=0;i<IMG_SIZE;i++){
-			data[i]=i;
+		unsigned char *data = new unsigned char[IMG_SIZE*4];
+		for(int i=0;i<IMG_SIZE*4;i++){
+			data[i]=(unsigned char)i;
 		}
 
-		/*D3D11_BUFFER_DESC hDesc;
-		// Set up the description of the instance buffer.
-		//hDesc.Usage = D3D11_USAGE_DYNAMIC;
-		hDesc.Usage = D3D11_USAGE_DEFAULT;
-		hDesc.ByteWidth = sizeof(float) * IMG_SIZE;
-		hDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_INDEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
-		//hDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;// | D3D11_CPU_ACCESS_READ;
-		hDesc.CPUAccessFlags = 0;// | D3D11_CPU_ACCESS_READ;
-		hDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		//hDesc.MiscFlags =0;// D3D11_RESOURCE_MISC_SHARED;
-		hDesc.StructureByteStride = sizeof(float);*/
-
-		D3D11_BUFFER_DESC hDesc;
-		// Set up the description of the instance buffer.
-		hDesc.Usage = D3D11_USAGE_DEFAULT;
-		//pDesc.Usage = D3D11_USAGE_DYNAMIC;
-		hDesc.ByteWidth = sizeof(float) * IMG_SIZE;
-		hDesc.BindFlags =  D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-		hDesc.CPUAccessFlags = 0;
-		//pDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		hDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		hDesc.StructureByteStride = sizeof(float);
+		D3D11_TEXTURE2D_DESC desc;
+		desc.Width = IMG_SIZE;
+		desc.Height = 1;
+		desc.MipLevels = desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.MiscFlags = 0;
 
 
-		D3D11_SUBRESOURCE_DATA hData;
-		// Give the subresource structure a pointer to the height data.
-		hData.pSysMem = data;
-		hData.SysMemPitch = 0;
-		hData.SysMemSlicePitch = 0;
+		D3D11_SUBRESOURCE_DATA textureData;
+		ZeroMemory(&textureData, sizeof(textureData));
+		//textureData.pSysMem = data;
+		textureData.SysMemPitch = sizeof(unsigned char) * IMG_SIZE *4;
 
-		// Create the heights buffer.
-		result = m_D3D->GetDevice()->CreateBuffer(&hDesc, &hData, &m_HeightsBuffer);
-		if (FAILED(result))
+		result = m_D3D->GetDevice()->CreateTexture2D( &desc, &textureData , &m_HeightsTexture );
+		 if (FAILED(result))
         {
            int k=0;
         }
@@ -188,13 +173,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		InstanceType *physicsData = new InstanceType[instanceCount];
 		ZeroMemory(physicsData, instanceCount * sizeof(InstanceType));
 		for(int i=0;i<instanceCount;i++){
-			//memcpy((void*)(physicsData+i), (void*)(m_Model->m_instances+i), sizeof(InstanceType));
-			//_memccpy((void*)(physicsData+m_Model->GetInstanceCount() + i), (void*)(m_ModelUno->m_instances+i), NULL, sizeof(InstanceType));
 			physicsData[i].position = D3DXVECTOR3((rand() % 12)- 6.0f, (rand() % 60)/10.0f - 3.0f,	i);
 			physicsData[i].color = D3DXVECTOR4(0, 0,0, 1.0f);
 			physicsData[i].collision = 0;
 			physicsData[i].positionx =  physicsData[i].position.x;
-			//physicsData[m_Model->GetInstanceCount() + i] = m_ModelUno->m_instances[i];
 		}
 	
 
@@ -202,6 +184,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 		D3D11_BUFFER_DESC pDesc;
 		// Set up the description of the instance buffer.
+
 		pDesc.Usage = D3D11_USAGE_DEFAULT;
 		//pDesc.Usage = D3D11_USAGE_DYNAMIC;
 		pDesc.ByteWidth = sizeof(InstanceType) * instanceCount;
@@ -218,7 +201,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		pData.SysMemPitch = 0;
 		pData.SysMemSlicePitch = 0;
 
-		// Create the heights buffer.
+		// Create the Physics buffer.
 		result = m_D3D->GetDevice()->CreateBuffer(&pDesc, &pData, &m_PhysicsBuffer);
 		  if (FAILED(result))
         {
@@ -238,37 +221,29 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
                return false;
 
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	ZeroMemory(&srvDesc, sizeof(srvDesc));
-	srvDesc.ViewDimension   	 = D3D11_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.ElementOffset = 0;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Format					= DXGI_FORMAT_UNKNOWN;
-	srvDesc.Buffer.NumElements = instanceCount;// m_Model->GetInstanceCount();
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		ZeroMemory(&srvDesc, sizeof(srvDesc));
+		srvDesc.ViewDimension   	 = D3D11_SRV_DIMENSION_BUFFER;
+		srvDesc.Buffer.ElementOffset = 0;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Format					= DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.NumElements = instanceCount;// m_Model->GetInstanceCount();
 
-	result = m_D3D ->GetDevice() -> CreateShaderResourceView( m_PhysicsBuffer , &srvDesc, &srv);
+		result = m_D3D ->GetDevice() -> CreateShaderResourceView( m_PhysicsBuffer , &srvDesc, &srv);
 
-	if(FAILED(result)){
-		int yx=3; //debug :)
-	}
+
+	   D3D11_UNORDERED_ACCESS_VIEW_DESC descTextureView;
+       ZeroMemory( &descTextureView, sizeof(descTextureView) );
+	   descTextureView.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+	   descTextureView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
+	   descTextureView.Texture2D.MipSlice = 0;
+	   result = m_D3D ->GetDevice() -> CreateUnorderedAccessView( m_HeightsTexture , &descTextureView, &heightsView);        
+
+
+		if(FAILED(result)){
+			int yx=3; //debug :)
+		}
 	
-
-	 D3D11_UNORDERED_ACCESS_VIEW_DESC descHeightView;
-	ZeroMemory(&descHeightView, sizeof(descHeightView));
-	descHeightView.ViewDimension	= D3D11_UAV_DIMENSION_BUFFER;
-	//descHeightView.ViewDimension = D3D11_UAV_DIMENSION_UNKNOWN;
-	descHeightView.Buffer.FirstElement = 0;
-	descHeightView.Format = DXGI_FORMAT_UNKNOWN;
-	descHeightView.Buffer.NumElements = IMG_SIZE; // Real buffer size;
-
-	result = m_D3D->GetDevice()->CreateUnorderedAccessView( m_HeightsBuffer, &descHeightView, &heightsView );
-	if(FAILED(result)){
-		int yx=3; //debug :)
-	}
-          
-
-
-
 	return true;
 }
 
@@ -390,7 +365,7 @@ bool GraphicsClass::Render()
 	m_D3D->GetDeviceContext()->CSSetShader(m_ComputeShader, 0, 0);
 	m_D3D->GetDeviceContext()->CSSetShaderResources(0, 1, &srv);
 	m_D3D->GetDeviceContext()->CSSetUnorderedAccessViews(0, 1, &instanceDestView, NULL); // Instance Buffers
-	m_D3D->GetDeviceContext()->CSSetUnorderedAccessViews(1, 1, &heightsView, NULL); // Height Buffer
+
 	m_D3D->GetDeviceContext()->Dispatch(16, 1, 1);
 
 	ID3D11UnorderedAccessView* pNullUAV = NULL;

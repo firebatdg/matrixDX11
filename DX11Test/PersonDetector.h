@@ -23,7 +23,7 @@ public:
 
 	PersonDetector(void);
 	void captureFrame();
-	vector<float> getHumans();
+	vector<int> getHumans();
 
 };
 

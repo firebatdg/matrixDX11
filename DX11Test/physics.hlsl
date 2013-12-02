@@ -9,7 +9,7 @@ struct Obj
 
 //StructuredBuffer<Obj> Buffer0 : register(t0);
 RWStructuredBuffer<Obj>  Positions : register(u0);
-RWStructuredBuffer<float>  Heights : register(u1);
+RWBuffer<float>  Heights : register(u1);
 float imagex = 480.0; //base
 float imagey = 480.0; //height
 
