@@ -46,11 +46,11 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID )
 	float imageLocationInX =  640.0 *((o.positionx+6.0)/12.0);
 	//int imageLocationInX = abs((o.positionx + 6.0) * imagex / 12.0); // Position in x -6 to 6 = 12 units
 	float pixel = Heights[imageLocationInX];
-	float imageLocationInY = (pixel * 8 / 480) - 4; //position in Y -4 to 4 = 8 units
+	float imageLocationInY = (pixel * 8.0 / 480.0) - 4.0; //position in Y -4 to 4 = 8 units
 
 	//o.color = o.color;
 	//o.color = float4((o.positionx+6.0)/12.0, 0,0, 1);
-	o.color = float4(pixel/640.0, 0, 0, 1);
+	o.color = float4(pixel/640.0, 0, 0, 1.0);
 
 	   // INFINITO!
 	   if(o.pos.y < imageLocationInY){ // Colission !! 

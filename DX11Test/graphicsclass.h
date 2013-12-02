@@ -50,6 +50,8 @@ public:
 	void Shutdown();
 	bool Frame();
 
+	void CheckErrors(HRESULT);
+
 private:
 	bool Render();
 

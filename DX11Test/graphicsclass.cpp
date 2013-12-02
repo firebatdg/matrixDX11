@@ -7,10 +7,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-
-
-
-
 GraphicsClass::GraphicsClass()
 {
 	m_D3D = 0;
@@ -22,16 +18,13 @@ GraphicsClass::GraphicsClass()
 	cvNamedWindow( "result", CV_WINDOW_AUTOSIZE );
 }
 
-
 GraphicsClass::GraphicsClass(const GraphicsClass& other)
 {
 }
 
-
 GraphicsClass::~GraphicsClass()
 {
 }
-
 
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
@@ -68,8 +61,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	//m_Model = new Teapot();
 	//m_ModelCero = OBJModel(L".\\cero.obj"); // :P 
-	m_ModelUno = new OBJModel(L".\\uno.obj", 0.8,0);
-	m_Model = new OBJModel(L".\\cero.obj",0.8, 1); // :P Se esta inicializando el cero
+	m_ModelUno = new OBJModel(L".\\uno.obj", 0.3,0);
+	m_Model = new OBJModel(L".\\cero.obj",0.3, 1); // :P Se esta inicializando el cero
 
 	personDetector = new PersonDetector();
 
@@ -119,12 +112,14 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	// Compile ComputeSHader
 	result = D3DX11CompileFromFile(L".\\physics.hlsl", 0, 0, "main", "cs_5_0", 0, 0, 0, &csBuffer, &errorMessage, 0);
 	if(FAILED(result)){
+		CheckErrors(result);
 		m_ColorShader ->OutputShaderErrorMessage(errorMessage,hwnd, L"Compute Shader" );
 	}
 
 	// Initialize ComputeShader
 	result = m_D3D->GetDevice()->CreateComputeShader(csBuffer->GetBufferPointer(), csBuffer->GetBufferSize(), NULL, &m_ComputeShader);
 	if(FAILED(result)){
+		CheckErrors(result);
 		int z=3; //debug :)
 	}
 
@@ -174,17 +169,24 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		result = m_D3D->GetDevice()->CreateBuffer(&hDesc, &hData, &m_HeightsBuffer);
 		if (FAILED(result))
         {
+			CheckErrors(result);
            int k=0;
         }
 
 		//SECOND BUFFER
 		D3D11_BUFFER_DESC h2Desc;
-		h2Desc.Usage = D3D11_USAGE_STAGING;
+		/*h2Desc.Usage = D3D11_USAGE_STAGING;
 		h2Desc.ByteWidth = sizeof(float) * IMG_SIZE;
 		h2Desc.BindFlags =  D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
 		h2Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		h2Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		h2Desc.StructureByteStride = sizeof(float);
+		h2Desc.StructureByteStride = sizeof(float);*/
+		h2Desc.Usage = D3D11_USAGE_DYNAMIC;
+        h2Desc.ByteWidth = sizeof(float) * IMG_SIZE;
+        h2Desc.BindFlags =   D3D11_BIND_VERTEX_BUFFER;// | D3D11_BIND_SHADER_RESOURCE;
+        h2Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;// | D3D11_CPU_ACCESS_READ;
+        h2Desc.MiscFlags =0;// D3D11_RESOURCE_MISC_SHARED;
+        h2Desc.StructureByteStride = sizeof(float);
 		
 		D3D11_SUBRESOURCE_DATA h2Data;
 		h2Data.pSysMem = data;
@@ -195,6 +197,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		result = m_D3D->GetDevice()->CreateBuffer(&h2Desc, &h2Data, &m_tempBuffer);
 		if (FAILED(result))
         {
+			CheckErrors(result);
            int k=0;
         }
 
@@ -217,9 +220,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 			physicsData[i].positionx =  physicsData[i].position.x;
 			//physicsData[m_Model->GetInstanceCount() + i] = m_ModelUno->m_instances[i];
 		}
-	
-
-		
 
 		D3D11_BUFFER_DESC pDesc;
 		// Set up the description of the instance buffer.
@@ -243,6 +243,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		result = m_D3D->GetDevice()->CreateBuffer(&pDesc, &pData, &m_PhysicsBuffer);
 		  if (FAILED(result))
         {
+			CheckErrors(result);
            int k=0;
         }
 
@@ -256,43 +257,43 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	   descView.Buffer.NumElements = instanceCount; //m_Model->GetInstanceCount();
                
 	   if(FAILED(m_D3D->GetDevice()->CreateUnorderedAccessView( m_PhysicsBuffer, &descView, &instanceDestView )))
-               return false;
+		   CheckErrors(result);
 
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		ZeroMemory(&srvDesc, sizeof(srvDesc));
+		srvDesc.ViewDimension   	 = D3D11_SRV_DIMENSION_BUFFER;
+		srvDesc.Buffer.ElementOffset = 0;
+		srvDesc.Buffer.FirstElement = 0;
+		srvDesc.Format					= DXGI_FORMAT_UNKNOWN;
+		srvDesc.Buffer.NumElements = instanceCount;// m_Model->GetInstanceCount();
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	ZeroMemory(&srvDesc, sizeof(srvDesc));
-	srvDesc.ViewDimension   	 = D3D11_SRV_DIMENSION_BUFFER;
-	srvDesc.Buffer.ElementOffset = 0;
-	srvDesc.Buffer.FirstElement = 0;
-	srvDesc.Format					= DXGI_FORMAT_UNKNOWN;
-	srvDesc.Buffer.NumElements = instanceCount;// m_Model->GetInstanceCount();
+		result = m_D3D ->GetDevice() -> CreateShaderResourceView( m_PhysicsBuffer , &srvDesc, &srv);
 
-	result = m_D3D ->GetDevice() -> CreateShaderResourceView( m_PhysicsBuffer , &srvDesc, &srv);
-
-	if(FAILED(result)){
-		int yx=3; //debug :)
-	}
+		if(FAILED(result)){
+			CheckErrors(result);
+			int yx=3; //debug :)
+		}
 	
 
-	 D3D11_UNORDERED_ACCESS_VIEW_DESC descHeightView;
-	ZeroMemory(&descHeightView, sizeof(descHeightView));
-	descHeightView.ViewDimension	= D3D11_UAV_DIMENSION_BUFFER;
-	//descHeightView.ViewDimension = D3D11_UAV_DIMENSION_UNKNOWN;
-	descHeightView.Buffer.FirstElement = 0;
-	descHeightView.Format = DXGI_FORMAT_UNKNOWN;
-	descHeightView.Buffer.NumElements = IMG_SIZE; // Real buffer size;
+		D3D11_UNORDERED_ACCESS_VIEW_DESC descHeightView;
+		ZeroMemory(&descHeightView, sizeof(descHeightView));
+		descHeightView.ViewDimension	= D3D11_UAV_DIMENSION_BUFFER;
+		//descHeightView.ViewDimension = D3D11_UAV_DIMENSION_UNKNOWN;
+		descHeightView.Buffer.FirstElement = 0;
+		descHeightView.Format = DXGI_FORMAT_UNKNOWN;
+		descHeightView.Buffer.NumElements = IMG_SIZE; // Real buffer size;
 
-	result = m_D3D->GetDevice()->CreateUnorderedAccessView( m_HeightsBuffer, &descHeightView, &heightsView );
-	if(FAILED(result)){
-		int yx=3; //debug :)
-	}
+		result = m_D3D->GetDevice()->CreateUnorderedAccessView( m_HeightsBuffer, &descHeightView, &heightsView );
+		if(FAILED(result)){
+			CheckErrors(result);
+			int yx=3; //debug :)
+		}
           
 
 
 
 	return true;
 }
-
 
 void GraphicsClass::Shutdown()
 {
@@ -336,12 +337,9 @@ void GraphicsClass::Shutdown()
 	return;
 }
 
-
 bool GraphicsClass::Frame()
 {
 	bool result;
-
-
 	// Render the graphics scene.
 	result = Render();
 	if(!result)
@@ -351,7 +349,6 @@ bool GraphicsClass::Frame()
 
 	return true;
 }
-
 
 bool GraphicsClass::Render()
 {
@@ -371,20 +368,20 @@ bool GraphicsClass::Render()
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 
 
-	/*D3D11_MAPPED_SUBRESOURCE mappedResource;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
 	count++;
-	if(count <-10){
+	if(count > 10){
 
 		personDetector->captureFrame();
 		vector<float> dataVector = personDetector->getHumans();
-		//float *data = &dataVector[0];
-		float *data = new float[640];
+		float *data = &dataVector[0];
+		/*float *data = new float[640];
 		for(int i=0;i<640;i++){
 			data[i] = (float)i;
 		}
-
+		*/
 		Mat demo(personDetector->final.rows, personDetector->final.cols, CV_8UC1);
 		demo = Scalar(0,0,0);
 		for(int i=0;i<dataVector.size(); i++){
@@ -392,17 +389,18 @@ bool GraphicsClass::Render()
 		}
 
 		auto m_d3dContext =m_D3D->GetDeviceContext();
-		HRESULT res = m_d3dContext->Map(m_HeightsBuffer, NULL, D3D11_MAP_WRITE_DISCARD , NULL, &mappedResource);
-		int x=2;
+		HRESULT res = m_d3dContext->Map(m_tempBuffer, NULL, D3D11_MAP_WRITE_DISCARD , NULL, &mappedResource);
+		//int x=2;
 		memcpy(mappedResource.pData, data, sizeof(float)*dataVector.size());
-		m_d3dContext->Unmap(m_HeightsBuffer, 0);
+		m_d3dContext->Unmap(m_tempBuffer, 0);
+
+		m_d3dContext->CopyResource(m_HeightsBuffer ,m_tempBuffer);
 
 		count = 0;
 		imshow( "result", demo );
+		imshow( "original", personDetector->final);
 		//waitKey( 10 );
-
-		
-	}*/
+	}
 
 	
 	// COMPUTE SHADER!
@@ -450,4 +448,52 @@ bool GraphicsClass::Render()
 	m_D3D->EndScene();
 
 	return true;
+}
+
+void GraphicsClass::CheckErrors(HRESULT result){
+	//switch (HRESULT_CODE(result)){
+	switch (result){
+		case D3D11_ERROR_FILE_NOT_FOUND:
+			MessageBox(NULL,L"The file was not found.",L"D3D11_ERROR_FILE_NOT_FOUND",MB_ICONERROR);
+			break;
+		case D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS:
+			MessageBox(NULL,L"There are too many unique instances of a particular type of state object.",L"D3D11_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS",MB_ICONERROR);
+			break;
+		case D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS:
+			MessageBox(NULL,L"There are too many unique instances of a particular type of view object.",L"D3D11_ERROR_TOO_MANY_UNIQUE_VIEW_OBJECTS",MB_ICONERROR);
+			break;
+		case D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD:
+			MessageBox(NULL,L"The first call to ID3D11DeviceContext::Map after either ID3D11Device::CreateDeferredContext or ID3D11DeviceContext::FinishCommandList per Resource was not D3D11_MAP_WRITE_DISCARD.",L"D3D11_ERROR_DEFERRED_CONTEXT_MAP_WITHOUT_INITIAL_DISCARD",MB_ICONERROR);
+			break;
+		case D3DERR_INVALIDCALL:
+			MessageBox(NULL,L"The method call is invalid. For example, a method's parameter may not be a valid pointer.",L"D3DERR_INVALIDCALL",MB_ICONERROR);
+			break;
+		case DXGI_ERROR_INVALID_CALL:
+			MessageBox(NULL,L"The method call is invalid. For example, a method's parameter may not be a valid pointer.",L"DXGI_ERROR_INVALID_CALL",MB_ICONERROR);
+			break;
+		case D3DERR_WASSTILLDRAWING:
+			MessageBox(NULL,L"The previous blit operation that is transferring information to or from this surface is incomplete.",L"D3DERR_WASSTILLDRAWING",MB_ICONERROR);
+			break;
+		case DXGI_ERROR_WAS_STILL_DRAWING:
+			MessageBox(NULL,L"The previous blit operation that is transferring information to or from this surface is incomplete.",L"DXGI_ERROR_WAS_STILL_DRAWING",MB_ICONERROR);
+			break;
+		case E_FAIL:
+			MessageBox(NULL,L"Attempted to create a device with the debug layer enabled and the layer is not installed.",L"E_FAIL",MB_ICONERROR);
+			break;
+		case E_INVALIDARG:
+			MessageBox(NULL,L"An invalid parameter was passed to the returning function.",L"E_INVALIDARG",MB_ICONERROR);
+			break;
+		case E_OUTOFMEMORY:
+			MessageBox(NULL,L"Direct3D could not allocate sufficient memory to complete the call.",L"E_OUTOFMEMORY",MB_ICONERROR);
+			break;
+		case S_FALSE:
+			MessageBox(NULL,L"Alternate success value, indicating a successful but nonstandard completion (the precise meaning depends on context).",L"S_FALSE",MB_ICONERROR);
+			break;
+		case S_OK:
+			MessageBox(NULL,L"No error occurred.",L"S_OK",MB_ICONERROR);
+			break;
+		default:
+			MessageBox(NULL,L"DEFAULT CASE no error catched",L"DEFAULT CASE",MB_ICONERROR);
+			break;
+	}
 }

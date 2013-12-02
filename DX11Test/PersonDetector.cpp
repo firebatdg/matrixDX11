@@ -66,13 +66,13 @@ vector<float> PersonDetector::getHumans(){
 
 				if(count == 1 || count & 2 == 1){
 
-					fringe.push_back((float)j);
+					fringe.push_back((float)(final.rows - j - 1.0f));
 				
 				}
 			}
 		}
 		if(count == 0){
-			fringe.push_back(0.0f);
+			fringe.push_back(final.rows - 1.0f);
 		
 		}
 	
