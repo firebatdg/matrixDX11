@@ -65,6 +65,7 @@ private:
 	ID3D11UnorderedAccessView* instanceDestView;
 	ID3D11ShaderResourceView* srv;
 	ID3D11Buffer* m_HeightsBuffer;
+	ID3D11Buffer* m_tempBuffer; //Second buffer
 	ID3D11Buffer* m_PhysicsBuffer;
 	ID3D11UnorderedAccessView* heightsView;
 	PersonDetector* personDetector;

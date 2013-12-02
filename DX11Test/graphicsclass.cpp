@@ -177,6 +177,27 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
            int k=0;
         }
 
+		//SECOND BUFFER
+		D3D11_BUFFER_DESC h2Desc;
+		h2Desc.Usage = D3D11_USAGE_STAGING;
+		h2Desc.ByteWidth = sizeof(float) * IMG_SIZE;
+		h2Desc.BindFlags =  D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
+		h2Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		h2Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		h2Desc.StructureByteStride = sizeof(float);
+		
+		D3D11_SUBRESOURCE_DATA h2Data;
+		h2Data.pSysMem = data;
+		h2Data.SysMemPitch = 0;
+		h2Data.SysMemSlicePitch = 0;
+
+		// Create the heights buffer.
+		result = m_D3D->GetDevice()->CreateBuffer(&h2Desc, &h2Data, &m_tempBuffer);
+		if (FAILED(result))
+        {
+           int k=0;
+        }
+
 	    /* -----------------------------------
 		 * Physics Buffer
 		 * -----------------------------------*/
