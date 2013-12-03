@@ -42,11 +42,11 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID )
 	//BufferOut[dispatchThreadID.x].pos = Buffer0[dispatchThreadID.x].pos;
 	Obj o = Positions[dispatchThreadID.x];
   	
-	//VIEW OF CAMERA  4 a -4 en X  -6 a 6 en Y
-	float imageLocationInX =  640.0 *((o.positionx+6.0)/12.0);
+	//VIEW OF CAMERA  5 a -5 (ya no se ve) en Y  -7 a 7 en X
+	float imageLocationInX =  640.0 *((o.positionx+7.0)/14.0);
 	//int imageLocationInX = abs((o.positionx + 6.0) * imagex / 12.0); // Position in x -6 to 6 = 12 units
 	float pixel = Heights[imageLocationInX];
-	float imageLocationInY = (pixel * 8.0 / 480.0) - 4.0; //position in Y -4 to 4 = 8 units
+	float imageLocationInY = (pixel * 10.0 / 480.0) - 5.0; //position in Y -4 to 4 = 8 units
 
 	//o.color = o.color;
 	//o.color = float4((o.positionx+6.0)/12.0, 0,0, 1);
@@ -59,11 +59,12 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID )
 		   o.ang.y = o.ang.y - 0.06* speed;
 		   o.pos.y = o.pos.y - 0.02 * speed;
 
-		   if(o.ang.y < -4){  //Out of bounds in the bottom of the screen 
+		   if(o.ang.y < -2 || o.pos.y < -5.0){  //Out of bounds in the bottom of the screen 
 			   o.collision = 0;
 			   o.pos.y = 5.0 + 0.1 * dispatchThreadID.x;
 			   o.ang.y = 0.0f;
 		   }
+
 	   }else{
 			o.pos.y = o.pos.y - 0.06  * speed;
 			

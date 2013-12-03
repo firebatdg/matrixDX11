@@ -61,8 +61,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	//m_Model = new Teapot();
 	//m_ModelCero = OBJModel(L".\\cero.obj"); // :P 
-	m_ModelUno = new OBJModel(L".\\uno.obj", 0.3,0);
-	m_Model = new OBJModel(L".\\cero.obj",0.3, 1); // :P Se esta inicializando el cero
+	m_ModelUno = new OBJModel(L".\\uno.obj", 0.2,0);
+	m_Model = new OBJModel(L".\\cero.obj",0.2, 1); // :P Se esta inicializando el cero
 
 	personDetector = new PersonDetector();
 
@@ -123,8 +123,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		int z=3; //debug :)
 	}
 
-
-
 	    /* -----------------------------------
 		 * Heights Buffer 
 		 * -----------------------------------*/
@@ -134,18 +132,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		for(int i=0;i<IMG_SIZE;i++){
 			data[i]=i;
 		}
-
-		/*D3D11_BUFFER_DESC hDesc;
-		// Set up the description of the instance buffer.
-		//hDesc.Usage = D3D11_USAGE_DYNAMIC;
-		hDesc.Usage = D3D11_USAGE_DEFAULT;
-		hDesc.ByteWidth = sizeof(float) * IMG_SIZE;
-		hDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; //D3D11_BIND_INDEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
-		//hDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;// | D3D11_CPU_ACCESS_READ;
-		hDesc.CPUAccessFlags = 0;// | D3D11_CPU_ACCESS_READ;
-		hDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		//hDesc.MiscFlags =0;// D3D11_RESOURCE_MISC_SHARED;
-		hDesc.StructureByteStride = sizeof(float);*/
 
 		D3D11_BUFFER_DESC hDesc;
 		// Set up the description of the instance buffer.
@@ -175,12 +161,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 		//SECOND BUFFER
 		D3D11_BUFFER_DESC h2Desc;
-		/*h2Desc.Usage = D3D11_USAGE_STAGING;
-		h2Desc.ByteWidth = sizeof(float) * IMG_SIZE;
-		h2Desc.BindFlags =  D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
-		h2Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		h2Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		h2Desc.StructureByteStride = sizeof(float);*/
 		h2Desc.Usage = D3D11_USAGE_DYNAMIC;
         h2Desc.ByteWidth = sizeof(float) * IMG_SIZE;
         h2Desc.BindFlags =   D3D11_BIND_VERTEX_BUFFER;// | D3D11_BIND_SHADER_RESOURCE;
@@ -214,7 +194,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		for(int i=0;i<instanceCount;i++){
 			//memcpy((void*)(physicsData+i), (void*)(m_Model->m_instances+i), sizeof(InstanceType));
 			//_memccpy((void*)(physicsData+m_Model->GetInstanceCount() + i), (void*)(m_ModelUno->m_instances+i), NULL, sizeof(InstanceType));
-			physicsData[i].position = D3DXVECTOR3((rand() % 12)- 6.0f, (rand() % 60)/10.0f - 3.0f,	i);
+
+			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			physicsData[i].position = D3DXVECTOR3(((r * 14.0) - 7.0),(rand() % 60)/10.0f - 3.0f,	i);
+			//physicsData[i].position = D3DXVECTOR3((rand() % 12)- 6.0f, (rand() % 60)/10.0f - 3.0f,	i);
 			physicsData[i].color = D3DXVECTOR4(0, 0,0, 1.0f);
 			physicsData[i].collision = 0;
 			physicsData[i].positionx =  physicsData[i].position.x;
@@ -372,7 +355,7 @@ bool GraphicsClass::Render()
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
 	count++;
-	if(count > 10){
+	if(count > 5){
 
 		personDetector->captureFrame();
 		vector<float> dataVector = personDetector->getHumans();
@@ -410,7 +393,7 @@ bool GraphicsClass::Render()
 	m_D3D->GetDeviceContext()->CSSetShaderResources(0, 1, &srv);
 	m_D3D->GetDeviceContext()->CSSetUnorderedAccessViews(0, 1, &instanceDestView, NULL); // Instance Buffers
 	m_D3D->GetDeviceContext()->CSSetUnorderedAccessViews(1, 1, &heightsView, NULL); // Height Buffer
-	m_D3D->GetDeviceContext()->Dispatch(16, 1, 1);
+	m_D3D->GetDeviceContext()->Dispatch((m_Model->GetInstanceCount()*2)/10, 1, 1);
 
 	ID3D11UnorderedAccessView* pNullUAV = NULL;
 	ID3D11ShaderResourceView* pSrvNull[2] = {NULL, NULL};

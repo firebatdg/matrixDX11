@@ -102,7 +102,9 @@ StructuredBuffer<Obj> Buffer0 : register(t0);
 	Obj buffData = Buffer0[instancePosition.z];
 	//position.x += instancePosition.x;
     //position.y += buffData.pos.y;
+
 	float3 tmp = float3(buffData.positionx, buffData.pos.y, 1);
+	//float3 tmp = float3(7, 0, 1);
 
 
 	float ang = buffData.ang.y % 360;
@@ -121,7 +123,7 @@ StructuredBuffer<Obj> Buffer0 : register(t0);
     output.v3DPos = mul(vPos, worldMatrix);
     output.normal= normalize( mul( float4(normal, 0), worldMatrix ) ).xyz;
 	//output.color = color;
-	output.color = buffData.color;
+	//output.color = buffData.color;
 
 	   // Calculate the position of the vertex against the world, view, and projection matrices.
     output.position = mul(vPos, worldMatrix);
@@ -134,6 +136,6 @@ StructuredBuffer<Obj> Buffer0 : register(t0);
 
 float4 PShader(VOut In) : SV_TARGET
 {
-	return In.color;
-    //return PhongModel(In.v3DPos, In.normal)+g_Diffuse;
+	//return In.color;
+    return PhongModel(In.v3DPos, In.normal)+g_Diffuse*1.5;
 }

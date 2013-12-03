@@ -61,7 +61,7 @@ bool OBJModel::InitializeBuffers(ID3D11Device* d3dDev)
 
 
 	// Set the number of instances in the array.
-	m_instanceCount = 80;
+	m_instanceCount = 360;
 
 
 	// Release the arrays now that the vertex and index buffers have been created and loaded.
